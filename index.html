@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>EGY CHARGE PRO | AHMED ELTHRANY</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
+        :root { --accent: #06b6d4; --bg: #020617; }
+        * { font-family: 'Cairo', sans-serif; -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+        body { background: var(--bg); color: white; margin: 0; overflow-x: hidden; }
+        
+        .glass { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(10px); }
+        .page { display: none; min-height: 100vh; padding-bottom: 100px; }
+        .page.active { display: block; animation: fadeIn 0.4s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: #0f172a; display: flex; justify-content: space-around; padding: 15px; border-top: 1px solid rgba(255,255,255,0.1); z-index: 5000; }
+        .nav-item { color: #64748b; font-size: 22px; transition: 0.3s; cursor: pointer; }
+        .nav-item.active { color: var(--accent); transform: translateY(-5px); }
+        
+        #loader { position: fixed; inset: 0; background: var(--bg); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10000; }
+        input { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; outline: none; transition: 0.3s; }
+        input:focus { border-color: var(--accent); }
+    </style>
+</head>
+<body>
+
+    <div id="loader">
+        <div class="relative mb-6">
+            <div class="w-24 h-24 border-4 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin"></div>
+            <i class="fas fa-bolt absolute inset-0 flex items-center justify-center text-cyan-400 text-3xl"></i>
+        </div>
+        <h1 class="text-3xl font-black tracking-widest text-white">EGY <span class="text-cyan-500">CHARGE</span></h1>
+        <p class="mt-2 text-[10px] text-cyan-500/50 tracking-[6px] font-bold">DEV / AHMED ELTHRANY</p>
+    </div>
+
+    <div id="authScreen" class="fixed inset-0 flex flex-col justify-center items-center p-6 z-[9000] bg-slate-950 hidden">
+        <div class="glass p-8 rounded-[40px] w-full max-w-sm text-center">
+            <h2 class="text-xl font-black mb-8">تسجيل الدخول للمتجر</h2>
+            
+            <div id="loginForms" class="space-y-4">
+                <button onclick="loginGoogle()" class="w-full bg-white text-black py-4 rounded-2xl font-black text-xs flex items-center justify-center gap-2">
+                    <img src="https://www.google.com/favicon.ico" class="w-4"> دخول العملاء بجوجل
+                </button>
+                <div class="text-[10px] text-gray-600 font-bold uppercase tracking-widest">أو بيانات الأدمن</div>
+                <input type="text" id="adminUser" class="w-full p-4 rounded-2xl text-xs" placeholder="اسم مستخدم الأدمن">
+                <input type="password" id="adminPass" class="w-full p-4 rounded-2xl text-xs" placeholder="كلمة المرور">
+                <button onclick="loginAdmin()" class="w-full bg-cyan-600 py-4 rounded-2xl font-black text-xs">دخول الإدارة</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="app" class="hidden">
+        <header class="p-5 flex justify-between items-center glass sticky top-0 z-[1000]">
+            <div>
+                <p class="text-[9px] text-cyan-500 font-black">EGY CHARGE PRO</p>
+                <h2 id="displayUserName" class="text-sm font-black">جاري التحميل..</h2>
+            </div>
+            <div class="text-left">
+                <p class="text-[8px] text-gray-500 font-bold">المحفظة</p>
+                <p class="text-sm font-black text-cyan-400"><span id="userBal">0</span> ج.م</p>
+            </div>
+        </header>
+
+        <div id="storePage" class="page active px-4 pt-6">
+            <div id="adminTools" class="hidden mb-6 grid grid-cols-2 gap-2">
+                <button onclick="openModal('addModal')" class="bg-cyan-600/20 border border-cyan-500/30 p-3 rounded-2xl text-cyan-400 text-[10px] font-black">+ إضافة سلعة</button>
+                <button onclick="openModal('walletModal')" class="bg-amber-600/20 border border-amber-500/30 p-3 rounded-2xl text-amber-400 text-[10px] font-black">شحن يدوي</button>
+            </div>
+            <div id="itemsGrid" class="grid grid-cols-2 gap-4"></div>
+        </div>
+
+        <div id="profilePage" class="page px-6 pt-10 text-center">
+            <div class="w-24 h-24 rounded-full bg-gradient-to-tr from-cyan-600 to-blue-900 mx-auto mb-4 flex items-center justify-center text-3xl font-black shadow-xl" id="avatar">؟</div>
+            
+            <div class="glass p-4 rounded-3xl mb-4">
+                <p class="text-[10px] text-gray-500 font-bold">ID المحفظة (أرسله للأدمن للشحن)</p>
+                <h3 id="userNumericID" class="text-2xl font-black text-cyan-400 tracking-widest">----</h3>
+            </div>
+
+            <div class="space-y-3">
+                <input id="editNameInp" class="w-full p-4 rounded-2xl text-center font-bold" placeholder="تعديل اسمك">
+                <button onclick="updateName()" class="w-full bg-cyan-600 py-3 rounded-2xl font-bold text-xs">حفظ الاسم الجديد</button>
+                <button onclick="logout()" class="w-full p-4 text-red-500 font-black text-xs">تسجيل الخروج</button>
+            </div>
+            <p class="mt-10 text-[8px] text-gray-600 font-bold">DEV / AHMED ELTHRANY © 2026</p>
+        </div>
+
+        <nav class="bottom-nav">
+            <div class="nav-item active" onclick="showPage('store')"><i class="fas fa-th-large"></i></div>
+            <div class="nav-item" onclick="showPage('profile')"><i class="fas fa-user-circle"></i></div>
+        </nav>
+    </div>
+
+    <div id="addModal" class="fixed inset-0 bg-black/95 z-[6000] hidden p-8 overflow-y-auto">
+        <h2 class="text-xl font-black mb-6" id="mTitle">إضافة سلعة</h2>
+        <input id="pId" type="hidden">
+        <div class="space-y-4">
+            <input id="pTitle" placeholder="اسم اللعبة" class="w-full p-4 rounded-2xl">
+            <input id="pPack" placeholder="الكمية" class="w-full p-4 rounded-2xl">
+            <input id="pPrice" type="number" placeholder="السعر (ج.م)" class="w-full p-4 rounded-2xl">
+            <input type="file" id="pFile" class="text-xs">
+            <button onclick="saveProduct()" class="w-full bg-cyan-600 py-4 rounded-2xl font-black">تأكيد الحفظ</button>
+            <button onclick="closeModal('addModal')" class="w-full text-gray-500 py-2">إلغاء</button>
+        </div>
+    </div>
+
+    <div id="walletModal" class="fixed inset-0 bg-black/95 z-[6000] hidden p-8">
+        <h2 class="text-xl font-black mb-6">شحن محفظة عميل</h2>
+        <div class="space-y-4">
+            <input id="targetID" placeholder="أدخل ID العميل" class="w-full p-4 rounded-2xl">
+            <input id="wAmount" type="number" placeholder="المبلغ (ج.م)" class="w-full p-4 rounded-2xl">
+            <button onclick="adminRecharge()" class="w-full bg-amber-600 py-4 rounded-2xl font-black">شحن الآن</button>
+            <button onclick="closeModal('walletModal')" class="w-full text-gray-500 py-2 text-xs">إغلاق</button>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCd6mOpEJyiUSAAhmm2NbhT80MMY0UQJcc",
+            authDomain: "project-fe025bb5-b1cc-4b8f-93e.firebaseapp.com",
+            databaseURL: "https://project-fe025bb5-b1cc-4b8f-93e-default-rtdb.firebaseio.com",
+            projectId: "project-fe025bb5-b1cc-4b8f-93e",
+            storageBucket: "project-fe025bb5-b1cc-4b8f-93e.firebasestorage.app",
+            appId: "1:148069353954:web:783adf7e8a0c796393d1bb"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        const admins = [
+            {u:'ahmedg', p:'ah2011', n:'أحمد'},
+            {u:'bekham12', p:'beko2011', n:'بيكهام'},
+            {u:'aligazi1', p:'ali2011', n:'علي'}
+        ];
+
+        auth.onAuthStateChanged(user => {
+            setTimeout(() => {
+                document.getElementById('loader').style.display = 'none';
+                if(user || localStorage.getItem('isAdmin')) {
+                    document.getElementById('app').classList.remove('hidden');
+                    document.getElementById('authScreen').classList.add('hidden');
+                    setupApp(user);
+                } else {
+                    document.getElementById('authScreen').classList.remove('hidden');
+                }
+            }, 3000);
+        });
+
+        function setupApp(user) {
+            const isAdmin = localStorage.getItem('isAdmin');
+            if(isAdmin) {
+                const name = localStorage.getItem('adminName');
+                document.getElementById('displayUserName').innerText = name;
+                document.getElementById('profileName').innerText = name;
+                document.getElementById('adminTools').classList.remove('hidden');
+                document.getElementById('userBal').innerText = "إدارة";
+            } else {
+                // للعملاء: توليد ID وجلب البيانات
+                const uid = user.uid;
+                db.ref(`users/${uid}`).on('value', s => {
+                    let data = s.val();
+                    if(!data) {
+                        // مستخدم جديد: نولد له ID رقمي عشوائي من 4 أرقام
+                        const randomID = Math.floor(1000 + Math.random() * 9000);
+                        data = { name: user.displayName || "عميل جديد", id: randomID, balance: 0 };
+                        db.ref(`users/${uid}`).set(data);
+                        // نربط الـ ID بالـ UID ليسهل على الأدمن البحث
+                        db.ref(`id_to_uid/${randomID}`).set(uid);
+                    }
+                    document.getElementById('displayUserName').innerText = data.name;
+                    document.getElementById('userNumericID').innerText = data.id;
+                    document.getElementById('userBal').innerText = data.balance;
+                    document.getElementById('editNameInp').value = data.name;
+                    document.getElementById('avatar').innerText = data.name[0];
+                });
+            }
+            loadProducts();
+        }
+
+        // وظائف المتجر
+        function loadProducts() {
+            db.ref('products').on('value', s => {
+                const grid = document.getElementById('itemsGrid'); grid.innerHTML = "";
+                const data = s.val();
+                if(data) Object.keys(data).forEach(id => {
+                    const item = data[id];
+                    grid.innerHTML += `
+                        <div class="glass p-3 rounded-[30px] relative">
+                            <img src="${item.img}" class="w-full h-28 object-cover rounded-3xl mb-3">
+                            <h4 class="text-[10px] font-black">${item.title}</h4>
+                            <p class="text-[8px] text-gray-500 mb-2">${item.pack}</p>
+                            <div class="flex justify-between items-center">
+                                <span class="text-cyan-400 font-black text-xs">${item.price} ج.م</span>
+                                <button onclick="buyNow('${id}', ${item.price})" class="bg-cyan-600 px-4 py-2 rounded-xl text-[9px] font-black">شحن</button>
+                            </div>
+                            ${localStorage.getItem('isAdmin') ? `
+                                <div class="absolute top-2 right-2 flex gap-1">
+                                    <button onclick="editProd('${id}')" class="bg-blue-600/80 p-1.5 rounded-lg text-[8px]"><i class="fas fa-edit"></i></button>
+                                    <button onclick="db.ref('products/${id}').remove()" class="bg-red-600/80 p-1.5 rounded-lg text-[8px]"><i class="fas fa-trash"></i></button>
+                                </div>
+                            ` : ''}
+                        </div>`;
+                });
+            });
+        }
+
+        async function saveProduct() {
+            const id = document.getElementById('pId').value;
+            const file = document.getElementById('pFile').files[0];
+            let imgUrl = "";
+            if(file) {
+                const fd = new FormData(); fd.append('file', file); fd.append('upload_preset', 'ml_default');
+                const res = await fetch('https://api.cloudinary.com/v1_1/drtn0oxxq/image/upload',{method:'POST',body:fd}).then(r=>r.json());
+                imgUrl = res.secure_url;
+            }
+            const data = {
+                title: document.getElementById('pTitle').value,
+                pack: document.getElementById('pPack').value,
+                price: document.getElementById('pPrice').value
+            };
+            if(imgUrl) data.img = imgUrl;
+            if(id) await db.ref(`products/${id}`).update(data);
+            else { data.img = imgUrl || "https://via.placeholder.com/150"; await db.ref('products').push(data); }
+            closeModal('addModal');
+        }
+
+        function editProd(id) {
+            db.ref(`products/${id}`).once('value', s => {
+                const v = s.val();
+                document.getElementById('pId').value = id;
+                document.getElementById('pTitle').value = v.title;
+                document.getElementById('pPack').value = v.pack;
+                document.getElementById('pPrice').value = v.price;
+                openModal('addModal');
+            });
+        }
+
+        // نظام المحفظة والاسم
+        function updateName() {
+            const newName = document.getElementById('editNameInp').value;
+            if(newName) db.ref(`users/${auth.currentUser.uid}/name`).set(newName).then(() => alert("تم تحديث الاسم بنجاح"));
+        }
+
+        async function adminRecharge() {
+            const tid = document.getElementById('targetID').value;
+            const amount = parseInt(document.getElementById('wAmount').value);
+            const uidShot = await db.ref(`id_to_uid/${tid}`).once('value');
+            const uid = uidShot.val();
+            if(uid) {
+                db.ref(`users/${uid}/balance`).transaction(c => (c || 0) + amount);
+                alert("تم الشحن بنجاح للـ ID: " + tid);
+                closeModal('walletModal');
+            } else { alert("عفواً، هذا الـ ID غير موجود!"); }
+        }
+
+        async function buyNow(pid, price) {
+            if(localStorage.getItem('isAdmin')) return;
+            const bal = parseInt(document.getElementById('userBal').innerText);
+            if(bal < price) return alert("رصيدك لا يكفي! تواصل مع الأدمن واطلب شحن محفظتك بـ ID الخاص بك.");
+            const pID = prompt("أدخل الـ ID الخاص بك داخل اللعبة:");
+            if(!pID) return;
+            
+            await db.ref(`users/${auth.currentUser.uid}/balance`).set(bal - price);
+            alert("تم الطلب! سيقوم الأدمن بالشحن لك في أسرع وقت.");
+        }
+
+        // أدوات النظام
+        function loginAdmin() {
+            const u = document.getElementById('adminUser').value, p = document.getElementById('adminPass').value;
+            const f = admins.find(x => x.u === u && x.p === p);
+            if(f) { localStorage.setItem('isAdmin', 'true'); localStorage.setItem('adminName', f.n); location.reload(); }
+            else alert("بيانات الأدمن غير صحيحة");
+        }
+        function loginGoogle() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
+        function showPage(p) {
+            document.querySelectorAll('.page').forEach(x => x.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(x => x.classList.remove('active'));
+            document.getElementById(p+'Page').classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+        function openModal(m) { document.getElementById(m).classList.remove('hidden'); }
+        function closeModal(m) { document.getElementById(m).classList.add('hidden'); document.getElementById('pId').value = ""; }
+        function logout() { auth.signOut(); localStorage.clear(); location.reload(); }
+    </script>
+</body>
+</html>
